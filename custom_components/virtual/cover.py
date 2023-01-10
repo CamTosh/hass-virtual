@@ -13,6 +13,9 @@ from homeassistant.helpers.config_validation import (PLATFORM_SCHEMA)
 from homeassistant.components.cover import (
     ATTR_CURRENT_POSITION,
     ATTR_POSITION,
+    SUPPORT_CLOSE,
+    SUPPORT_OPEN,
+    SUPPORT_SET_POSITION,
     CoverDeviceClass,
     CoverEntity,
 )
@@ -59,6 +62,8 @@ class VirtualCover(CoverEntity):
         self._state = STATE_CLOSED if config.get(CONF_INITIAL_VALUE) == STATE_CLOSED else STATE_OPEN
         self._position = config.get(CONF_INITIAL_POSITION)
 
+        self._toPosition = None
+
         if self._position > 100:
             self._position = 100
 
@@ -71,7 +76,7 @@ class VirtualCover(CoverEntity):
         data = {}
 
         data[ATTR_CURRENT_POSITION] = self._position
-        data[ATTR_CURRENT_POSITION] = self._position
+        data[ATTR_POSITION] = self._toPosition
 
         return data
 
@@ -112,6 +117,7 @@ class VirtualCover(CoverEntity):
         if position > 100:
             position = 100
 
+        self._toPosition = position
         self._state = STATE_CLOSING if position < self._position else STATE_OPENING
         sleep(4)
 
@@ -122,6 +128,17 @@ class VirtualCover(CoverEntity):
             self._state = STATE_OPEN
             self._position = position
 
+        self._toPosition = None
+
+    @property
+    def supported_features(self):
+        """Flag supported features."""
+        return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION
+
+    @property
+    def unique_id(self):
+        """Return a unique ID."""
+        return self._unique_id
 
     @property
     def available(self):
